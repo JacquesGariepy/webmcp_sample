@@ -1,0 +1,325 @@
+# Walkthrough: building the WebMCP sample with tk
+
+Recorded on 2026-09-01 15:41 on Windows 11, tk 0.4.5 (checkout, 0.4.6 fixes), node v22.12.0. Actor: jacques.gariepy@aspynai.com, harness claude-code.
+Two git repositories: the code (`webmcp_sample`) and the tk store (`webmcp_sample-store`). Nothing below is edited by hand; it is the captured output.
+
+## 1. The store
+
+```console
+$ git init webmcp_sample-store
+initialised
+
+$ tk init
+store: C:\repo\test\webmcp_sample-store (git, autoSync=commit)
+next: tk project add <slug> [--tracker …] ; then in each repo: tk project map <slug>
+
+$ tk project add webmcp --tracker github --channel cli --owners jacques.gariepy@aspynai.com
+project added: webmcp
+edit tk.config.json → projects.webmcp.tracker.writes (opaque object per remote state, null = comment only, absent = skipped)
+
+$ edit tk.config.json: writes for github (labels), autoSync commit
+written
+
+$ tk config
+project  webmcp
+repo     webmcp_sample-store
+lang     en (available: en, fr)
+tracker  github via cli
+  awaiting_human  {"labels":["needs-decision"]}
+  in_review       {"labels":["in-review"]}
+  in_progress     {"labels":["in-progress"]}
+workflow remote: awaiting_human←awaiting, in_review←all_children_done, in_progress←any_child_started; types: epic, deliverable, task, defect, spike, review, release
+git      autoSync=commit
+policy   staleMinutes=45 leaseMinutes=240 compactDays=7 maxNoteChars=4000 deadLetterAfter=3 observationMaxAgeHours=24 recentDays=7 readyLimit=15
+projects webmcp
+config ok
+
+$ git add -A && git commit -m 'tk store'
+warning: in the working copy of '.github/CODEOWNERS', LF will be replaced by CRLF the next time Git touches it
+cfb91ce tk store
+ef6f72a tk: project add webmcp [jacques.gariepy@aspynai.com via claude-code]
+
+```
+
+## 2. The code repository, mapped to the project
+
+```console
+$ git init webmcp_sample + remote origin
+warning: in the working copy of 'LICENSE', LF will be replaced by CRLF the next time Git touches it
+initialised, LICENSE committed
+
+$ tk project map webmcp
+repo JacquesGariepy/webmcp_sample mapped to project webmcp
+
+$ tk setup repo --harness claude-code
+setup repo JacquesGariepy/webmcp_sample → webmcp [claude-code] done: AGENTS.md, .claude/settings.json
+
+$ git add AGENTS.md .claude && git commit
+warning: in the working copy of '.claude/settings.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'AGENTS.md', LF will be replaced by CRLF the next time Git touches it
+74fd952 tk: agent instructions and hooks
+d727e36 MIT license
+
+$ tk setup check
+ok  node >= >=18 (22.12.0)
+ok  git available (git version 2.55.0.windows.5)
+ok  commit identity (no git identity; tk commits as jacques.gariepy@aspynai.com)
+ok  store reachable (C:\repo\test\webmcp_sample-store)
+ok  store is a git repo (no upstream)
+ok  identity configured (jacques.gariepy@aspynai.com ← env TK_ACTOR)
+ok  harness recognised (claude-code ← env TK_HARNESS)
+ok  repo mapped to a project (webmcp)
+ok  tk on PATH (npm i -g tk-agent-tasks)
+
+$ tk whoami
+repo     JacquesGariepy/webmcp_sample   ← git remote origin
+branch   main                           ← git
+actor    jacques.gariepy@aspynai.com    ← env TK_ACTOR
+harness  claude-code                    ← env TK_HARNESS
+session  s-664f9f086b7f                 ← host + parent pid
+project  webmcp
+store    C:\repo\test\webmcp_sample-store
+
+```
+
+## 3. Plan the work as tk tasks
+
+```console
+$ tk add "Reading List: WebMCP sample" --ref 1 --type deliverable   → webmcp-2he8fj9r
+$ tk add "scaffold page + styles" --parent webmcp-2he8fj9r   → webmcp-vg25f4xp
+$ tk add "register read/write/decision tools" --parent webmcp-2he8fj9r --blocked-by webmcp-vg25f4xp   → webmcp-ff67r0eq
+$ tk add "declarative form + selection-scoped tools" --parent webmcp-2he8fj9r --blocked-by webmcp-ff67r0eq   → webmcp-h0fjnwj3
+$ tk add "README + walkthrough" --parent webmcp-2he8fj9r --blocked-by webmcp-h0fjnwj3   → webmcp-9ff397bx
+
+$ tk show webmcp-2he8fj9r
+webmcp-2he8fj9r  [P3] todo        Reading List: WebMCP sample  (1)  #webmcp deliverable
+  webmcp-vg25f4xp  [P3] todo        scaffold page + styles  ↳ webmcp-2he8fj9r
+  webmcp-ff67r0eq  [P3] todo        register read/write/decision tools  ↳ webmcp-2he8fj9r  ⛔ webmcp-vg25f4xp
+  webmcp-h0fjnwj3  [P3] todo        declarative form + selection-scoped tools  ↳ webmcp-2he8fj9r  ⛔ webmcp-ff67r0eq
+  webmcp-9ff397bx  [P3] todo        README + walkthrough  ↳ webmcp-2he8fj9r  ⛔ webmcp-h0fjnwj3
+
+$ tk ready
+webmcp-vg25f4xp  [P3] todo        scaffold page + styles  ↳ webmcp-2he8fj9r
+
+```
+
+## 4. Task 1: scaffold page + styles
+
+```console
+$ tk claim webmcp-vg25f4xp
+claimed webmcp-vg25f4xp  [P3] in_progress scaffold page + styles  by jacques.gariepy@aspynai.com  ↳ webmcp-2he8fj9r  (run_hrata2kc829h, attempt 1, NOT yet shared with the team)
+
+$ write index.html (skeleton only) and style.css; git commit
+warning: in the working copy of '.claude/settings.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'AGENTS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'style.css', LF will be replaced by CRLF the next time Git touches it
+77becea scaffold: page and styles
+
+$ tk done webmcp-vg25f4xp --note index.html skeleton (header, items, add form, proposals, feed) and style.css; no script yet --files index.html,style.css
+done webmcp-vg25f4xp  [P3] done        scaffold page + styles  ↳ webmcp-2he8fj9r
+→ outbox 394442436fa9e8d82d69f792: 1 → in_progress via cli. Apply it, record effects, then `tk ack 394442436fa9e8d82d69f792`.
+
+$ tk outbox
+394442436fa9e8d82d69f792  PENDING
+  1 [github/cli] → in_progress {"labels":["in-progress"]}  effects: ○comment ○write
+  expected remote: unobserved
+  ### Agent run started
+
+$ tk ready
+webmcp-ff67r0eq  [P3] todo        register read/write/decision tools  ↳ webmcp-2he8fj9r
+
+```
+
+## 5. Task 2: register read/write/decision tools
+
+```console
+$ tk claim webmcp-ff67r0eq
+claimed webmcp-ff67r0eq  [P3] in_progress register read/write/decision tools  by jacques.gariepy@aspynai.com  ↳ webmcp-2he8fj9r  (run_bz1q45mh0y5s, attempt 1, NOT yet shared with the team)
+
+$ tk heartbeat webmcp-ff67r0eq
+lease renewed for webmcp-ff67r0eq
+
+$ write app.mjs (catalogue: 2 read, 1 write, 1 decision tool); wire the script; git commit
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app.mjs', LF will be replaced by CRLF the next time Git touches it
+942688b tools: reading_list_state, _unread, _mark_read, _propose_delete
+
+$ node --check app.mjs
+syntax ok
+
+$ tk done webmcp-ff67r0eq --note document.modelContext.registerTool for 4 tools with tier annotations; decision tool only creates a proposal --files app.mjs,index.html --tests node --check ok
+done webmcp-ff67r0eq  [P3] done        register read/write/decision tools  ↳ webmcp-2he8fj9r
+→ outbox 40a645b7606d9883bc967508: 1 → in_progress via cli. Apply it, record effects, then `tk ack 40a645b7606d9883bc967508`.
+
+```
+
+## 6. Task 3: declarative form + selection-scoped tools (with a question for a human)
+
+```console
+$ tk claim webmcp-h0fjnwj3
+claimed webmcp-h0fjnwj3  [P3] in_progress declarative form + selection-scoped tools  by jacques.gariepy@aspynai.com  ↳ webmcp-2he8fj9r  (run_b958c5mp8tfq, attempt 1, NOT yet shared with the team)
+
+$ tk note webmcp-h0fjnwj3 form already carries toolname/tooldescription; adding AbortController-scoped tools on selection
+note added to webmcp-h0fjnwj3
+
+$ tk await webmcp-h0fjnwj3 Should a rejected deletion proposal be kept in the feed, or dropped silently?
+awaiting human: webmcp-2he8fj9r
+
+$ tk status
+## webmcp (github): 5 tasks (+0 archived), 0 ready / 2 todo, 2 done in 7d
+  ▶ webmcp-h0fjnwj3 declarative form + selection-scoped tools  by jacques.gariepy@aspynai.com@claude-code
+  ? webmcp-2he8fj9r 1 Should a rejected deletion proposal be kept in the feed, or dropped silently?
+  ✉ tracker writes: f9db371cb5b3cdb20410000e pending
+
+$ tk resume webmcp-h0fjnwj3
+resumed webmcp-2he8fj9r
+
+$ write final app.mjs (selection-scoped tools, toolchange); git commit
+warning: in the working copy of 'app.mjs', LF will be replaced by CRLF the next time Git touches it
+e91ff10 scoped tools on selection, toolchange, respondWith
+
+$ node --check app.mjs
+syntax ok
+
+$ tk done webmcp-h0fjnwj3 --note 3 selection-scoped tools registered per selected item, aborted on reselection; form answered with respondWith when agentInvoked --files app.mjs --tests node --check ok
+done webmcp-h0fjnwj3  [P3] done        declarative form + selection-scoped tools  ↳ webmcp-2he8fj9r
+→ outbox c4780becab8a26825b1a5252: 1 → in_progress via cli. Apply it, record effects, then `tk ack c4780becab8a26825b1a5252`.
+
+```
+
+## 7. Task 4: README + walkthrough
+
+```console
+$ tk claim webmcp-9ff397bx
+claimed webmcp-9ff397bx  [P3] in_progress README + walkthrough  by jacques.gariepy@aspynai.com  ↳ webmcp-2he8fj9r  (run_g6sxyjmhmnjx, attempt 1, NOT yet shared with the team)
+
+$ write README.md; git commit
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+5cac299 README
+
+$ tk done webmcp-9ff397bx --note README with tool table, prompts to try, and how tk drove the work; WALKTHROUGH.md is this file --files README.md,WALKTHROUGH.md
+done webmcp-9ff397bx  [P3] done        README + walkthrough  ↳ webmcp-2he8fj9r
+→ outbox cbc14374d796ef6f0f1443d2: 1 → in_review via cli. Apply it, record effects, then `tk ack cbc14374d796ef6f0f1443d2`.
+
+```
+
+## 8. What the team sees
+
+```console
+$ tk status
+## webmcp (github): 5 tasks (+0 archived), 0 ready / 1 todo, 4 done in 7d
+  ✉ tracker writes: cbc14374d796ef6f0f1443d2 pending
+
+$ tk show webmcp-2he8fj9r
+webmcp-2he8fj9r  [P3] todo        Reading List: WebMCP sample  (1)  #webmcp deliverable
+  webmcp-vg25f4xp  [P3] done        scaffold page + styles  ↳ webmcp-2he8fj9r
+  webmcp-ff67r0eq  [P3] done        register read/write/decision tools  ↳ webmcp-2he8fj9r
+  webmcp-h0fjnwj3  [P3] done        declarative form + selection-scoped tools  ↳ webmcp-2he8fj9r
+  webmcp-9ff397bx  [P3] done        README + walkthrough  ↳ webmcp-2he8fj9r
+
+$ tk outbox
+cbc14374d796ef6f0f1443d2  PENDING
+  1 [github/cli] → in_review {"labels":["in-review"]}  effects: ○comment ○write
+  expected remote: unobserved
+  ### Ready for review
+
+$ tk conflicts
+no contested claim
+
+$ tk validate
+ok: 5 task(s), 20 event(s), 0 tombstone(s) in 1 project(s)
+
+$ tk doctor
+store   C:\repo\test\webmcp_sample-store
+git     clean
+config  ok
+env     ok  node >= >=18 (22.12.0)
+env     ok  git available (git version 2.55.0.windows.5)
+env     ok  commit identity (no git identity; tk commits as jacques.gariepy@aspynai.com)
+env     ok  store reachable (C:\repo\test\webmcp_sample-store)
+env     ok  store is a git repo (no upstream)
+env     ok  identity configured (jacques.gariepy@aspynai.com ← env TK_ACTOR)
+env     ok  harness recognised (claude-code ← env TK_HARNESS)
+env     ok  repo mapped to a project (webmcp)
+env     ok  tk on PATH (npm i -g tk-agent-tasks)
+unreadable lines: 0
+errors  0
+warnings 0
+
+$ tk check
+Pending tracker writes: cbc14374d796ef6f0f1443d2
+Apply them through the tracker channel, record each effect, then `tk ack <hash>`.
+   [exit 2]
+
+```
+
+## 9. The ledger itself
+
+Store commits (one per action, authored by the actor, harness in the message):
+
+```
+$ git -C webmcp_sample-store log --oneline
+ef5dd2a tk: done webmcp-9ff397bx [jacques.gariepy@aspynai.com via claude-code]
+c05bb30 tk: claim webmcp-9ff397bx [jacques.gariepy@aspynai.com via claude-code]
+0d181ba tk: done webmcp-h0fjnwj3 [jacques.gariepy@aspynai.com via claude-code]
+83b3610 tk: resume webmcp-h0fjnwj3 [jacques.gariepy@aspynai.com via claude-code]
+416603a tk: await webmcp-h0fjnwj3 [jacques.gariepy@aspynai.com via claude-code]
+f51a3c0 tk: note webmcp-h0fjnwj3 [jacques.gariepy@aspynai.com via claude-code]
+ef14fb2 tk: claim webmcp-h0fjnwj3 [jacques.gariepy@aspynai.com via claude-code]
+27e9c43 tk: done webmcp-ff67r0eq [jacques.gariepy@aspynai.com via claude-code]
+08329f9 tk: heartbeat webmcp-ff67r0eq [jacques.gariepy@aspynai.com via claude-code]
+72706f7 tk: claim webmcp-ff67r0eq [jacques.gariepy@aspynai.com via claude-code]
+aa98f98 tk: done webmcp-vg25f4xp [jacques.gariepy@aspynai.com via claude-code]
+68af13a tk: claim webmcp-vg25f4xp [jacques.gariepy@aspynai.com via claude-code]
+c3d62a1 tk: add README + walkthrough [jacques.gariepy@aspynai.com via claude-code]
+a90cca3 tk: add declarative form + selection-scoped tools [jacques.gariepy@aspynai.com via claude-code]
+32a9f0c tk: add register read/write/decision tools [jacques.gariepy@aspynai.com via claude-code]
+0beb13b tk: add scaffold page + styles [jacques.gariepy@aspynai.com via claude-code]
+0e88436 tk: add Reading List: WebMCP sample [jacques.gariepy@aspynai.com via claude-code]
+da1f4a9 tk: project map webmcp [jacques.gariepy@aspynai.com via claude-code]
+cfb91ce tk store
+ef6f72a tk: project add webmcp [jacques.gariepy@aspynai.com via claude-code]
+
+```
+
+Event types in `projects/webmcp/events/jacques-gariepy-aspynai-com.jsonl`:
+
+```
+$ event types
+19:41:17  task.created       webmcp-2he8fj9r
+19:41:18  task.created       webmcp-vg25f4xp
+19:41:20  task.created       webmcp-ff67r0eq
+19:41:20  dependency.added   webmcp-ff67r0eq
+19:41:21  task.created       webmcp-h0fjnwj3
+19:41:21  dependency.added   webmcp-h0fjnwj3
+19:41:22  task.created       webmcp-9ff397bx
+19:41:22  dependency.added   webmcp-9ff397bx
+19:41:24  task.claimed       webmcp-vg25f4xp
+19:41:26  task.done          webmcp-vg25f4xp
+19:41:29  task.claimed       webmcp-ff67r0eq
+19:41:30  lease.heartbeat    webmcp-ff67r0eq
+19:41:32  task.done          webmcp-ff67r0eq
+19:41:33  task.claimed       webmcp-h0fjnwj3
+19:41:34  task.noted         webmcp-h0fjnwj3
+19:41:35  task.awaiting      webmcp-2he8fj9r
+19:41:37  task.resumed       webmcp-2he8fj9r
+19:41:39  task.done          webmcp-h0fjnwj3
+19:41:40  task.claimed       webmcp-9ff397bx
+19:41:42  task.done          webmcp-9ff397bx
+
+```
+
+One event, verbatim:
+
+```json
+$ first task.done event
+{"v":2,"id":"evt_1k1f7r8f3aedgpwf91x3f","hlc":"2026-09-01T19:41:26.883Z|0010|jacques-gariepy-aspynai-com","project":"webmcp","type":"task.done","task":"webmcp-vg25f4xp","actor":"jacques.gariepy@aspynai.com","actorKind":"human","harness":"claude-code","model":null,"session":"s-664f9f086b7f","data":{"leaseId":"lease_472agh0b0qd1","runId":"run_hrata2kc829h","note":"index.html skeleton (header, items, add form, proposals, feed) and style.css; no script yet","pr":null,"files":["index.html","style.css"],"tests":null,"finalCommit":"77beceac17263910d2645ada290b0b110f9fbb60","force":false,"reason":null}}
+
+```
+
+## 10. What is left for a person
+
+- The outbox items above are what tk wants written to GitHub issue #1 (labels). They are applied by whoever holds a GitHub session, for example `gh issue edit 1 --add-label in-review` and `gh issue comment 1 --body-file …`, then recorded with `tk outbox effect <hash> write|comment --receipt <url>` and `tk ack <hash>`. They were deliberately left pending here: no GitHub session was available while recording.
+- `tk serve` opens the board over this store; the same actions are exposed to a browser agent as WebMCP tools.
+
