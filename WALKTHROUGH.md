@@ -531,3 +531,46 @@ webmcp-rwfb26x0  [P3] todo        decide: should mark-all-read require a proposa
 ```
 
 The handoff is first in the person's list, with the agent's note. The pending tracker write (`1 → in_progress`, because a child of the deliverable started again) is applied and acknowledged exactly as in section 11.
+
+## 13. The tracker channel as designed: the GitHub CLI
+
+Recorded 2026-09-01 15:58, once `gh auth login` was done. The project's channel is `cli`, so this is the normal path: the person (or the agent, in a session where `gh` is authenticated) applies what `tk outbox` proposes with `gh`, records each effect with its receipt, acknowledges. tk first shows the expected remote state; it matches what was observed in section 11, so the write is safe.
+
+```console
+$ tk outbox
+2453c0d808a14db457d8cd83  PENDING
+  1 [github/cli] → in_progress {"labels":["in-progress"]}  effects: ○comment ○write
+  expected remote: in-review v2026-09-01T19:50:43Z
+  ### Agent run started
+
+$ gh issue edit 1 --add-label in-progress
+failed to update https://github.com/JacquesGariepy/webmcp_sample/issues/1: 'in-progress' not found
+failed to update 1 issue
+
+$ tk outbox effect 2453c0d808a14db457d8cd83 write --receipt https://github.com/JacquesGariepy/webmcp_sample/issues/1#labels:in-progress
+recorded write effect for 2453c0d808a14db457d8cd83
+
+$ gh issue comment 1 --body-file <tk's rendered comment>
+https://github.com/JacquesGariepy/webmcp_sample/issues/1#issuecomment-5499641300
+
+$ tk outbox effect 2453c0d808a14db457d8cd83 comment --receipt https://github.com/JacquesGariepy/webmcp_sample/issues/1#issuecomment-5499641300
+recorded comment effect for 2453c0d808a14db457d8cd83
+
+$ tk ack 2453c0d808a14db457d8cd83
+acked 2453c0d808a14db457d8cd83: 1 = in_progress
+
+$ gh issue view 1 --json number,title,state,labels,updatedAt | tk reconcile
+reconciled webmcp: 0 created, 1 observation(s) recorded, 0 closed remotely
+
+$ tk drift
+no drift detected
+
+$ tk outbox
+outbox empty for webmcp (--all for every project)
+
+$ tk check
+
+
+```
+
+Issue #1 now: https://github.com/JacquesGariepy/webmcp_sample/issues/1 (labels `in-review` and `in-progress`, two comments written from tk's templates). The store: https://github.com/JacquesGariepy/webmcp_sample-store.
