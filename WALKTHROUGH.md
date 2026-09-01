@@ -574,3 +574,40 @@ $ tk check
 ```
 
 Issue #1 now: https://github.com/JacquesGariepy/webmcp_sample/issues/1 (labels `in-review` and `in-progress`, two comments written from tk's templates). The store: https://github.com/JacquesGariepy/webmcp_sample-store.
+
+### 13b. Correction: a receipt was recorded for a write that had failed
+
+Two things went wrong in section 13, both on the operator's side, none in tk. First, a PowerShell quoting error in the recording script printed a stack trace where the `gh issue view` check should have been (left as captured). Second, and more important: `gh issue edit 1 --add-label in-progress` failed because the label did not exist yet (`gh` does not create labels, the REST endpoint used in section 11 does), and the script still ran `tk outbox effect … write --receipt …` without checking the exit code. tk cannot know that a receipt is false; the ledger is append-only, so the fix is recorded, not erased:
+
+```console
+$ gh label create in-progress --color FBCA04 --description 'set by tk outbox'
+
+$ gh issue edit 1 --add-label in-progress
+https://github.com/JacquesGariepy/webmcp_sample/issues/1
+
+$ gh issue view 1 --json state,labels
+OPEN  labels: in-review,in-progress
+
+$ tk note webmcp-2he8fj9r correction: the write effect of outbox 2453c0d808a14db457d8cd83 was recorded before gh confirmed it; gh had failed (label in-progress did not exist). Label created and applied at 2026-09-01T16:00:13Z; the comment effect was genuine.
+note added to webmcp-2he8fj9r
+
+$ gh issue view 1 --json … | tk reconcile
+reconciled webmcp: 0 created, 1 observation(s) recorded, 0 closed remotely
+
+$ tk drift
+no drift detected
+
+$ tk show webmcp-2he8fj9r
+webmcp-2he8fj9r  [P3] todo        Reading List: WebMCP sample  (1)  #webmcp deliverable
+  note 2026-09-01T20:00:14.627Z jacques.gariepy@aspynai.com: correction: the write effect of outbox 2453c0d808a14db457d8cd83 was recorded before gh confirmed it; gh had failed (label in-progress did not exist). Label created and applied at 2026-09-01T16:00:13Z; the comment effect was genuine.
+  tracker: in-review,in-progress observed 2026-09-01T20:00:16.229Z
+  webmcp-vg25f4xp  [P3] done        scaffold page + styles  ↳ webmcp-2he8fj9r
+  webmcp-ff67r0eq  [P3] done        register read/write/decision tools  ↳ webmcp-2he8fj9r
+  webmcp-h0fjnwj3  [P3] done        declarative form + selection-scoped tools  ↳ webmcp-2he8fj9r
+  webmcp-9ff397bx  [P3] done        README + walkthrough  ↳ webmcp-2he8fj9r
+  webmcp-he1tcrxp  [P2] done        tool: mark all read (optionally by tag)  ↳ webmcp-2he8fj9r
+  webmcp-rwfb26x0  [P3] todo        decide: should mark-all-read require a proposal when it touches more than 10 items?  ↳ webmcp-2he8fj9r  → handoff to jacques.gariepy@aspynai.com
+
+```
+
+Lesson for the `tracker-bridge` skill and for any agent applying an outbox: check the tracker command's exit status before `tk outbox effect`, and re-observe with `tk reconcile` right after. Both are now in the tk documentation.
