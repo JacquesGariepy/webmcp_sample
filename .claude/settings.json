@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tk prime --sync --harness claude-code --actor-kind agent"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tk check --harness claude-code --actor-kind agent"
+          }
+        ]
+      }
+    ]
+  }
+}
