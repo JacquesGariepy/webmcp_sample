@@ -11,7 +11,7 @@ A single static page that registers tools for the browser's agent with **WebMCP*
 | Tier | Tools | Behaviour |
 |---|---|---|
 | read | `reading_list_state`, `reading_list_unread` | No side effects (`readOnlyHint`). |
-| write | `reading_list_mark_read`, declarative form `reading_list_add` | Immediate, same functions as the buttons. |
+| write | `reading_list_mark_read`, `reading_list_mark_all_read`, declarative form `reading_list_add` | Immediate, same functions as the buttons. |
 | decision | `reading_list_propose_delete` | Never deletes. Creates a proposal under *Needs a person*; you approve or reject. |
 | scoped | `reading_list_selected_show`, `…_selected_mark_read`, `…_selected_propose_delete` | Registered when you click an item, unregistered when you click another (`AbortController` → `toolchange`). |
 
