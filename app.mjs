@@ -1,4 +1,4 @@
-// Reading List: a minimal, dependency-free WebMCP sample (step 2: catalogue tools only; selection-scoped tools come next).
+// Reading List: a minimal, dependency-free WebMCP sample.
 // Three ideas borrowed from tk's board (https://github.com/JacquesGariepy/tk):
 //   1. tools in tiers: read (no side effects), write (immediate), decision (a proposal a person approves);
 //   2. selection-scoped tools that appear and disappear with the human's attention (toolchange);
@@ -65,7 +65,9 @@ document.addEventListener("click", (e) => {
 $("#add-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target).entries());
-  try { addItem(data, "you"); e.target.reset(); } catch (err) { log("page", `rejected: ${err.message}`); }
+  const who = e.agentInvoked ? "agent (form)" : "you";
+  try { const item = addItem(data, who); e.target.reset(); e.respondWith?.(`added ${item.id}`); }
+  catch (err) { log("page", `rejected: ${err.message}`); e.respondWith?.(`error: ${err.message}`); }
 });
 
 // ---------- WebMCP ----------
@@ -83,7 +85,7 @@ function tool(def) {
       try { const r = await def.run(input ?? {}); return { content: [{ type: "text", text: JSON.stringify(r) }] }; }
       catch (err) { log("page", `tool ${def.name} refused: ${err.message}`); return { content: [{ type: "text", text: JSON.stringify({ error: err.message }) }], isError: true }; }
     }
-  });
+  }, def.signal ? { signal: def.signal } : undefined);
 }
 const obj = (properties, required = []) => ({ type: "object", properties, required });
 
@@ -92,17 +94,30 @@ function registerCatalogue() {
   tool({ name: "reading_list_unread", tier: "read", description: "Items not read yet, optionally filtered by tag.", input: obj({ tag: { type: "string" } }), run: ({ tag }) => state.items.filter(i => !i.read && (!tag || i.tag === tag)) });
   tool({ name: "reading_list_mark_read", tier: "write", description: "Mark an item as read (or unread with read=false).", input: obj({ id: { type: "string" }, read: { type: "boolean", default: true } }, ["id"]), run: ({ id, read = true }) => markRead(id, read, "agent") });
   tool({ name: "reading_list_propose_delete", tier: "decision", description: "Propose deleting an item. Never deletes: a person approves or rejects on the page.", input: obj({ id: { type: "string" }, reason: { type: "string" } }, ["id"]), run: ({ id, reason }) => proposeDelete(id, reason, "agent") });
+  // reading_list_add is the declarative <form toolname="reading_list_add"> in index.html: the browser registers it for us.
 }
 
-function select(itemId) { state.selected = state.selected === itemId ? null : itemId; render(); }
+let scoped = null; // AbortController of the selection-scoped tools
+function select(itemId) {
+  state.selected = state.selected === itemId ? null : itemId; render();
+  scoped?.abort(); scoped = null;                                     // unregisters the previous item's tools → toolchange
+  const it = state.items.find(i => i.id === state.selected); if (!it || !mc) return;
+  scoped = new AbortController(); const signal = scoped.signal;
+  tool({ name: "reading_list_selected_show", tier: "read", description: `The item the person is looking at: "${it.title}".`, input: obj({}), signal, run: () => it });
+  tool({ name: "reading_list_selected_mark_read", tier: "write", description: `Mark the selected item ("${it.title}") as read.`, input: obj({}), signal, run: () => markRead(it.id, true, "agent") });
+  tool({ name: "reading_list_selected_propose_delete", tier: "decision", description: `Propose deleting the selected item ("${it.title}"); a person approves.`, input: obj({ reason: { type: "string" } }), signal, run: ({ reason }) => proposeDelete(it.id, reason, "agent") });
+  log("page", `selected "${it.title}": 3 scoped tools registered`);
+}
 
 if (mc) {
   registerCatalogue();
   const api = document.modelContext ? "document.modelContext" : "navigator.modelContext (deprecated name)";
-  statusEl.textContent = `WebMCP ${api}: ${registered.size} tools registered`;
+  statusEl.textContent = `WebMCP ${api}: ${registered.size} tools registered + 1 declarative form`;
   statusEl.classList.add("ok");
+  mc.addEventListener?.("toolchange", () => log("browser", "toolchange"));
 } else {
   statusEl.textContent = "WebMCP not available in this browser: the page works by hand. Chrome: chrome://flags/#enable-webmcp-testing";
   statusEl.classList.add("off");
 }
 render();
+if (!state.items.length) log("page", "empty list; try: “add the WebMCP explainer to my reading list, tag webmcp”");
