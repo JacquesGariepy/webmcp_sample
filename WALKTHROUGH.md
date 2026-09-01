@@ -323,3 +323,75 @@ $ first task.done event
 - The outbox items above are what tk wants written to GitHub issue #1 (labels). They are applied by whoever holds a GitHub session, for example `gh issue edit 1 --add-label in-review` and `gh issue comment 1 --body-file …`, then recorded with `tk outbox effect <hash> write|comment --receipt <url>` and `tk ack <hash>`. They were deliberately left pending here: no GitHub session was available while recording.
 - `tk serve` opens the board over this store; the same actions are exposed to a browser agent as WebMCP tools.
 
+
+## 11. Applied for real: the outbox lands on GitHub issue #1
+
+Recorded 2026-09-01 15:50 after the repositories were created: https://github.com/JacquesGariepy/webmcp_sample and https://github.com/JacquesGariepy/webmcp_sample-store. The GitHub writes below are done by hand through the REST API (the project's channel is `cli`); tk only says what to write and records the receipts.
+
+```console
+$ tk sync
+synced (pulled + pushed, remote verified)
+
+$ tk outbox --json   → 1 item
+  hash=cbc14374d796ef6f0f1443d2  ref=1  state=in_review  write={"labels":["in-review"]}  effectsNeeded=comment,write
+  comment (first lines):
+  | ### Ready for review
+  | 
+  | Implemented:
+  | - README + walkthrough (README with tool table, prompts to try, and how tk drove the work; WALKTHROUGH.md is this file)
+  | - register read/write/decision tools (document.modelContext.registerTool for 4 tools with tier annotations; decision tool only creates a proposal)
+  | - declarative form + selection-scoped tools (3 selection-scoped tools registered per selected item, aborted on reselection; form answered with respondWith when agentInvoked)
+
+$ POST https://api.github.com/repos/JacquesGariepy/webmcp_sample/issues/1/labels  
+  → labels now: in-review
+
+$ tk outbox effect cbc14374d796ef6f0f1443d2 write --receipt https://github.com/JacquesGariepy/webmcp_sample/issues/1#labels:in-review
+recorded write effect for cbc14374d796ef6f0f1443d2
+
+$ POST https://api.github.com/repos/JacquesGariepy/webmcp_sample/issues/1/comments  (body = the comment rendered by tk from templates/in_review.md)
+  → https://github.com/JacquesGariepy/webmcp_sample/issues/1#issuecomment-5499540424
+
+$ tk outbox effect cbc14374d796ef6f0f1443d2 comment --receipt https://github.com/JacquesGariepy/webmcp_sample/issues/1#issuecomment-5499540424
+recorded comment effect for cbc14374d796ef6f0f1443d2
+
+$ tk ack cbc14374d796ef6f0f1443d2
+acked cbc14374d796ef6f0f1443d2: 1 = in_review
+
+$ tk outbox
+outbox empty for webmcp (--all for every project)
+
+$ GET https://api.github.com/repos/JacquesGariepy/webmcp_sample/issues/1  → state=open labels=in-review
+$ echo '{"state":"in-review","updatedAt":"2026-09-01T19:50:43Z","stateType":"open","ref":"1","assignee":null,"url":"https://github.com/JacquesGariepy/webmcp_sample/issues/1","number":1,"closed":false,"title":"Reading List: WebMCP sample"}' | tk reconcile
+reconciled webmcp: 0 created, 1 observation(s) recorded, 0 closed remotely
+
+$ tk drift
+no drift detected
+
+$ tk show webmcp-2he8fj9r
+webmcp-2he8fj9r  [P3] todo        Reading List: WebMCP sample  (1)  #webmcp deliverable
+  tracker: in-review observed 2026-09-01T19:50:50.394Z
+  webmcp-vg25f4xp  [P3] done        scaffold page + styles  ↳ webmcp-2he8fj9r
+  webmcp-ff67r0eq  [P3] done        register read/write/decision tools  ↳ webmcp-2he8fj9r
+  webmcp-h0fjnwj3  [P3] done        declarative form + selection-scoped tools  ↳ webmcp-2he8fj9r
+  webmcp-9ff397bx  [P3] done        README + walkthrough  ↳ webmcp-2he8fj9r
+
+$ tk check
+
+
+$ tk status
+## webmcp (github): 5 tasks (+0 archived), 0 ready / 1 todo, 4 done in 7d
+
+```
+
+Store commits added by this step:
+
+```
+db2bbcb tk: reconcile 1 tracker item(s) [jacques.gariepy@aspynai.com via claude-code]
+a5835b1 tk: ack cbc14374d796ef6f0f1443d2 [jacques.gariepy@aspynai.com via claude-code]
+d58c90a tk: outbox effect cbc14374d796ef6f0f1443d2 [jacques.gariepy@aspynai.com via claude-code]
+26d9164 tk: outbox effect cbc14374d796ef6f0f1443d2 [jacques.gariepy@aspynai.com via claude-code]
+ef5dd2a tk: done webmcp-9ff397bx [jacques.gariepy@aspynai.com via claude-code]
+c05bb30 tk: claim webmcp-9ff397bx [jacques.gariepy@aspynai.com via claude-code]
+```
+
+The issue, with the label and the comment tk asked for: https://github.com/JacquesGariepy/webmcp_sample/issues/1
