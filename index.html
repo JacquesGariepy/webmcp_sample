@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading List · WebMCP sample</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Reading List</h1>
+  <p class="tagline">A page that tells the browser's agent what it can do here.</p>
+  <p id="webmcp-status" class="status" aria-live="polite">checking WebMCP…</p>
+</header>
+
+<main class="grid">
+  <section class="card">
+    <h2>Items <span id="count" class="pill">0</span></h2>
+    <ul id="items" class="items"></ul>
+    <p class="hint">Click an item to select it: selection-scoped tools appear for the agent (<code>toolchange</code>).</p>
+  </section>
+
+  <section class="card">
+    <h2>Add an item</h2>
+    <!-- Declarative WebMCP: the form itself is a tool. No JavaScript is needed for the agent to use it. -->
+    <form id="add-form" toolname="reading_list_add" tooldescription="Add a link to the reading list with an optional tag and note.">
+      <label>URL <input name="url" type="url" required placeholder="https://…" toolparamdescription="Absolute URL of the page to read later"></label>
+      <label>Title <input name="title" type="text" required placeholder="What is it?" toolparamdescription="Short human title"></label>
+      <label>Tag <input name="tag" type="text" placeholder="webmcp, agents, …" toolparamdescription="One lowercase tag"></label>
+      <label>Note <textarea name="note" rows="2" placeholder="Why it matters" toolparamdescription="Why this is worth reading"></textarea></label>
+      <button type="submit">Add</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Needs a person</h2>
+    <p class="hint">Deleting is a <em>decision</em>: the agent can only propose it. You approve or reject.</p>
+    <ul id="proposals" class="proposals"></ul>
+  </section>
+
+  <section class="card wide">
+    <h2>Activity</h2>
+    <ol id="feed" class="feed"></ol>
+  </section>
+</main>
+
+<footer class="foot">
+  Built with tk (<a href="https://github.com/JacquesGariepy/tk">github.com/JacquesGariepy/tk</a>): every task of this sample was claimed, done and written back through the tk ledger. See <code>WALKTHROUGH.md</code>.
+</footer>
+
+</body>
+</html>
+
